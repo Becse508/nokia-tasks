@@ -88,7 +88,7 @@ def parse_short(text: str) -> dict[str, Any]:
 
 def main():
     parsed_data = []
-    for path in sorted(Path(".").glob("*.log")):
+    for path in Path(".").glob("*.log"):
         parsed_data.append({
             "file_name": path.name,
             "adapters": parse_short(path.read_text(encoding='utf-8'))
