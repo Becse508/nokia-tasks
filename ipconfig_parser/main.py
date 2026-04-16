@@ -1,7 +1,10 @@
 from pathlib import Path
 from json import dumps
+from typing import Any
 
-def parse_line(line: str) -> tuple[str, str]:
+KEYS_WITH_ARRAY_TYPE = ["dns_servers"]
+
+def parse_line(line: str) -> tuple[str, Any]:
     parts = line.split(":", 1)
     if (len(parts) != 2):
         return None, None
@@ -9,12 +12,12 @@ def parse_line(line: str) -> tuple[str, str]:
     # formazas
     key = parts[0].replace(".", "").strip().lower().replace(" ", "_")
     val = parts[1].strip()
-    if val == "" or val.isspace():
-        val = None
+    if key in KEYS_WITH_ARRAY_TYPE:
+        val = [x.strip() for x in val.split(',')]
     
     return (key, val)
 
-def parse(text: str) -> dict[str, str]:
+def parse(text: str) -> dict[str, Any]:
     result = []
     lines = text.split('\n')
     
@@ -31,7 +34,7 @@ def parse(text: str) -> dict[str, str]:
         
         elif parsing:
             key, val = parse_line(line)
-            if key != None: # None ertek megengedheto, kulcs nem
+            if key != None:
                 result[-1][key] = val
             
     return result
