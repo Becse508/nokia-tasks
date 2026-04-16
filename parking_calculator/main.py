@@ -5,12 +5,12 @@ from sys import argv
 HOURS = 3600
 MINUTES = 60
 
-def parse(text: str) -> tuple[datetime, datetime] | None:
+def parse(text: str) -> tuple[str, datetime, datetime] | None:
     parts = text.split('		', 2)
     if (len(parts) < 3):
         return None
     
-    return datetime.fromisoformat(parts[1]), datetime.fromisoformat(parts[2])
+    return parts[0], datetime.fromisoformat(parts[1]), datetime.fromisoformat(parts[2])
 
 
 def calc_time(start: datetime, end: datetime) -> timedelta:
@@ -45,11 +45,14 @@ def main():
     data = Path("input.txt").read_text(encoding="utf-8")
     accurate_fine = (len(argv) > 1 and argv[1] == "accurate")
     
+    print("RENDSZAM      IDO                 AR\n"
+          "================================================")
     for line in data.split('\n')[2:]:
-        time = calc_time(*parse(line))
+        plate, start, end = parse(line)
+        time = calc_time(start, end)
         fine = calc_fine(time, accurate_fine)
         
-        print(f"{time} -> {int(fine)}Ft")
+        print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
     
 
 
