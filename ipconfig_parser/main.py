@@ -22,20 +22,23 @@ def parse(text: str) -> dict[str, Any]:
     lines = text.split('\n')
     
     parsing = False
+    just_started = False
     for line in lines:
-        if not parsing and "adapter" in line:
+        if "adapter" in line and line.endswith(':') and not line.startswith(" "):
             parsing = True
-            result.append({})
-            
-        elif line == "" or line.isspace():
-            # ha most kezdodott a blokk akkor hagyja, ha nem akkor vege
-            if parsing and len(result[-1]) != 0: 
-                parsing = False
+            just_started = True
+            result.append({"adapter_name": line[:-2].strip()})
         
-        elif parsing:
+        elif parsing and line.startswith(" "):
             key, val = parse_line(line)
             if key != None:
                 result[-1][key] = val
+        
+        elif line == "" or line.isspace() or not line.startswith(" "):
+            if just_started:
+                just_started = False
+            elif parsing:
+                parsing = False
             
     return result
         
