@@ -48,7 +48,7 @@ def main():
     for path in sorted(Path(".").glob("*.log")):
         parsed_data.append({
             "file_name": path.name,
-            "adapters": parse(path.read_text())
+            "adapters": parse(path.read_text(encoding='utf-8'))
         })
     
     print(dumps(parsed_data, indent=2))

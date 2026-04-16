@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import datetime, timedelta
 from sys import argv
+from math import ceil
 
 HOURS = 3600
 MINUTES = 60
@@ -18,39 +19,39 @@ def calc_time(start: datetime, end: datetime) -> timedelta:
         return timedelta(0)
     return end - start
     
-def calc_fine(time: timedelta, accurate: bool = False) -> float | int:
-    hours = 0
+def calc_fine(time: timedelta) -> float | int:
+    minutes = 0
     if (time.seconds != 0):
-        if (accurate): # masodpercre pontos szamolas
-            hours = time.seconds / HOURS
-        else: # minden megkezdett ora
-            hours = time.seconds // HOURS + 1
+        # percre pontos szamolas
+        minutes = ceil(time.seconds / MINUTES)
     
-    # elso nap
+    # egy nap
     if (time.days == 0):
         # ingyenes 30 perc
-        if (time.seconds <= 30 * MINUTES):
+        if (minutes <= 30):
             return 0
-        # olcso 3 ora
-        if (hours <= 3):
-            return hours * 300
-
-        return 3 * 300 + (hours-3)*500
         
-    
-    return time.days * 10000 + hours * 500
+        # olcso 3 ora - 30p
+        if (minutes <= 3*60 + 30):
+            return ceil((minutes - 30) / 60) * 300
+
+        return min(3 * 300 + ceil((minutes - 3*60 - 30) / 60) * 500,
+                   10000) # napi max
+        
+    # a feladat megfogalmazasa nem volt egyertelmu, gondolom igy kell tobb napot szamolni
+    return time.days * 10000 + min(ceil(minutes / 60) * 500,
+                                   10000) # napi max
     
 
 def main():
     data = Path("input.txt").read_text(encoding="utf-8")
-    accurate_fine = (len(argv) > 1 and argv[1] == "accurate")
     
     print("RENDSZAM      IDO                 AR\n"
           "================================================")
     for line in data.split('\n')[2:]:
         plate, start, end = parse(line)
         time = calc_time(start, end)
-        fine = calc_fine(time, accurate_fine)
+        fine = calc_fine(time)
         
         print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
     
