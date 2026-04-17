@@ -53,7 +53,8 @@ def main():
         time = calc_time(start, end)
         fine = calc_fine(time)
         
-        print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
+        # print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
+        print(fine)
     
 
 
