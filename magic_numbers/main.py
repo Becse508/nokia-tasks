@@ -45,11 +45,14 @@ def next_magic_num(n: int) -> str:
 def main():
     data = Path("input.txt").read_text(encoding="utf-8")
     
-    print("\n".join([
-        f"next_magic_num({line}) => {next_magic_num(int(line))}"
-        for line in data.splitlines()
-        if line.isdecimal()
-    ]))
+    for line in data.splitlines():
+        if ("^" in line):
+            base, exp = line.split("^")
+            num = int(base) ** int(exp)
+        else:
+            num = int(line)
+            
+        print(next_magic_num(num))
 
 
 if __name__ == "__main__":
