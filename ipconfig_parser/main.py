@@ -7,7 +7,7 @@ ARG_CLEAN = "clean" in argv                     # nem tart meg olyan beolvasott 
 ARG_UNIFORM = "uniform" in argv                 # minden adapterblokk tartalmazza a UNIFORM_KEYS kulcsokat is
 ARG_FORCE = ("force" in argv) and ARG_UNIFORM   # minden adapterblokk csak a UNIFORM_KEYS kulcsokat tartalmazza
 
-KEYS_WITH_ARRAY_TYPE = ["dns_servers"]
+KEYS_WITH_ARRAY_TYPE = ["dns_servers", "default_gateway"]
 UNIFORM_KEYS = [
     "adapter_name",
     "description",
@@ -20,22 +20,28 @@ UNIFORM_KEYS = [
 ]
 
 
-def parse_line(line: str, clean: bool = False) -> tuple[str, Any]:
+def parse_line(line: str, prev_was_array: bool = False, clean: bool = False) -> tuple[bool, str, Any]:
+    if (prev_was_array and line.startswith(("\t\t", " "*6))): # hozzaadjuk az elozo listahoz
+        val = line.strip()
+        return True, None, val if val != "" else None # ures erteket nem adunk vissza
+    
     parts = line.split(":", 1)
-    if (len(parts) != 2):
-        return None, None
+    if (len(parts) != 2): # nem valid sor
+        return False, None, None
     
     # formazas
     key = parts[0].replace(".", "").strip().lower().replace(" ", "_")
     val = parts[1].strip()
     
     if clean and val == "":
-        return None, None
-    
+        return False, None, None
+     
     if (key in KEYS_WITH_ARRAY_TYPE):
-        val = [x.strip() for x in val.split(',')]
+        val = [val.strip()]
+        if (val[0] == ""): # nem akarunk [""] listat
+            return False, key, []
     
-    return (key, val)
+    return False, key, val
 
 
 def make_uniform(data: list[dict], force: bool = False):
@@ -44,7 +50,7 @@ def make_uniform(data: list[dict], force: bool = False):
             if not key in adapter:
                 adapter[key] = [] if key in KEYS_WITH_ARRAY_TYPE else ""
     
-    if force:
+    if force: # csak UNIFORM_KEYS kulcsok maradnak
         data[:] = [
             {
                 k: v for k, v in adapter.items()
@@ -53,9 +59,8 @@ def make_uniform(data: list[dict], force: bool = False):
             for adapter in data
         ]
     
-    
 
-# megnezem, hogy benne van-e az "adapter" szo a biztonsag kedveert
+
 is_adapter_name = lambda line: "adapter" in line and line.endswith(':') and not line.startswith(" ")
 is_end_of_block = lambda line: line == "" or line.isspace() or not line.startswith(" ")
 
@@ -65,7 +70,8 @@ def parse_safe(text: str, uniform: bool = False, force: bool = False, clean: boo
     
     parsing = False
     just_started = False
-    for line in text.split('\n'):
+    prev_key = ""
+    for line in text.splitlines():
         # adapter nev = blokk kezdete
         if is_adapter_name(line):
             parsing = True
@@ -73,13 +79,20 @@ def parse_safe(text: str, uniform: bool = False, force: bool = False, clean: boo
             result.append({"adapter_name": line.strip()[:-1]})
         
         # blokk kozben
-        elif (parsing and line.startswith(" ")):
-            key, val = parse_line(line, clean)
-            if (key != None):
+        elif (parsing and line.startswith((" ", "\t"))):
+            prev_was_array = isinstance(result[-1].get(prev_key), list)
+            append, key, val = parse_line(line, prev_was_array, clean)
+            
+            if (append and val != None and prev_key != None):
+                result[-1][prev_key].append(val)
+            elif (key != None):
                 result[-1][key] = val
+                prev_key = key
+            else:
+                prev_key = None
         
         # blokk vege
-        elif is_end_of_block(line):
+        elif not parsing and is_end_of_block(line):
             if just_started:
                 just_started = False
             elif parsing:
@@ -90,30 +103,18 @@ def parse_safe(text: str, uniform: bool = False, force: bool = False, clean: boo
     return result
 
 
-# kevesbe biztonsagos de szebb a kod (tokeletesen mukodik sima ipconfiggal)
-def parse_short(text: str, uniform: bool = False, force: bool = False, clean: bool = False) -> dict[str, Any]:
-    result = []
-    
-    for line in text.split('\n'):
-        # adapter nev = blokk kezdete
-        if (line.endswith(':') and not line.startswith(" ")):
-            result.append({"adapter_name": line[:-2].strip()})
-        
-        # blokk kozben
-        elif (line.startswith(" ")):
-            key, val = parse_line(line, clean)
-            if (key != None):
-                result[-1][key] = val
-    if uniform:
-        make_uniform(result, force)
-    return result
-
 def main():
+    
     parsed_data = []
-    for path in Path(".").glob("*.log"):
+    for path in sorted(Path(".").glob("*.txt")):
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            text = path.read_text(encoding='utf-16')
+
         parsed_data.append({
             "file_name": path.name,
-            "adapters": parse_safe(path.read_text(encoding='utf-8'), ARG_UNIFORM, ARG_FORCE, ARG_CLEAN)
+            "adapters": parse_safe(text.strip(), ARG_UNIFORM, ARG_FORCE, ARG_CLEAN)
         })
     
     print(dumps(parsed_data, indent=2))
