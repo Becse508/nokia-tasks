@@ -48,7 +48,7 @@ def main():
     
     print("RENDSZAM      IDO                 AR\n"
           "================================================")
-    for line in data.split('\n')[2:]:
+    for line in data.splitlines()[2:]:
         plate, start, end = parse(line)
         time = calc_time(start, end)
         fine = calc_fine(time)

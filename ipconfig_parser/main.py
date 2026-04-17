@@ -64,8 +64,7 @@ def make_uniform(data: list[dict], force: bool = False):
 is_adapter_name = lambda line: "adapter" in line and line.endswith(':') and not line.startswith(" ")
 is_end_of_block = lambda line: line == "" or line.isspace() or not line.startswith(" ")
 
-# biztonsagos parse
-def parse_safe(text: str, uniform: bool = False, force: bool = False, clean: bool = False) -> dict[str, Any]:
+def parse(text: str, uniform: bool = False, force: bool = False, clean: bool = False) -> dict[str, Any]:
     result = []
     
     parsing = False
@@ -114,7 +113,7 @@ def main():
 
         parsed_data.append({
             "file_name": path.name,
-            "adapters": parse_safe(text.strip(), ARG_UNIFORM, ARG_FORCE, ARG_CLEAN)
+            "adapters": parse(text.strip(), ARG_UNIFORM, ARG_FORCE, ARG_CLEAN)
         })
     
     print(dumps(parsed_data, indent=2))

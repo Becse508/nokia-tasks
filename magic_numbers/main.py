@@ -47,7 +47,7 @@ def main():
     
     print("\n".join([
         f"next_magic_num({line}) => {next_magic_num(int(line))}"
-        for line in data.split('\n')
+        for line in data.splitlines()
         if line.isdecimal()
     ]))
 
