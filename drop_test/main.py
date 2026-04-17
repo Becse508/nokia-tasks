@@ -16,7 +16,7 @@ def main():
     raw = Path("input.txt").read_text(encoding="utf-8")
     data = [line.split(", ") for line in raw.splitlines()]
     print("\n".join(
-        f"min_num_drops({pieces}, {height}) => {min_num_drops(int(pieces), int(height))}"
+        str(min_num_drops(int(pieces), int(height)))
         for pieces, height in data
     ))
 
