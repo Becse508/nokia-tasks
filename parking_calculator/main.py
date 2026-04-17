@@ -46,15 +46,14 @@ def calc_fine(time: timedelta) -> float | int:
 def main():
     data = Path("input.txt").read_text(encoding="utf-8")
     
-    # print("RENDSZAM      IDO                 AR\n"
-    #       "================================================")
+    print("RENDSZAM      IDO                 AR\n"
+          "================================================")
     for line in data.splitlines()[2:]:
         plate, start, end = parse(line)
         time = calc_time(start, end)
         fine = calc_fine(time)
         
-        # print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
-        print(fine)
+        print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
     
 
 
