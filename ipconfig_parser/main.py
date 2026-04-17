@@ -3,8 +3,9 @@ from json import dumps
 from typing import Any
 from sys import argv
 
-ARG_UNIFORM = "uniform" in argv
-ARG_FORCE = ("force" in argv) and ARG_UNIFORM
+ARG_CLEAN = "clean" in argv                     # nem tart meg olyan beolvasott kulcsokat, aminek nincs erteke
+ARG_UNIFORM = "uniform" in argv                 # minden adapterblokk tartalmazza a UNIFORM_KEYS kulcsokat is
+ARG_FORCE = ("force" in argv) and ARG_UNIFORM   # minden adapterblokk csak a UNIFORM_KEYS kulcsokat tartalmazza
 
 KEYS_WITH_ARRAY_TYPE = ["dns_servers"]
 UNIFORM_KEYS = [
@@ -19,7 +20,7 @@ UNIFORM_KEYS = [
 ]
 
 
-def parse_line(line: str) -> tuple[str, Any]:
+def parse_line(line: str, clean: bool = False) -> tuple[str, Any]:
     parts = line.split(":", 1)
     if (len(parts) != 2):
         return None, None
@@ -27,6 +28,10 @@ def parse_line(line: str) -> tuple[str, Any]:
     # formazas
     key = parts[0].replace(".", "").strip().lower().replace(" ", "_")
     val = parts[1].strip()
+    
+    if clean and val == "":
+        return None, None
+    
     if (key in KEYS_WITH_ARRAY_TYPE):
         val = [x.strip() for x in val.split(',')]
     
@@ -55,7 +60,7 @@ is_adapter_name = lambda line: "adapter" in line and line.endswith(':') and not 
 is_end_of_block = lambda line: line == "" or line.isspace() or not line.startswith(" ")
 
 # biztonsagos parse
-def parse_safe(text: str, uniform: bool = False, force: bool = False) -> dict[str, Any]:
+def parse_safe(text: str, uniform: bool = False, force: bool = False, clean: bool = False) -> dict[str, Any]:
     result = []
     
     parsing = False
@@ -69,7 +74,7 @@ def parse_safe(text: str, uniform: bool = False, force: bool = False) -> dict[st
         
         # blokk kozben
         elif (parsing and line.startswith(" ")):
-            key, val = parse_line(line)
+            key, val = parse_line(line, clean)
             if (key != None):
                 result[-1][key] = val
         
@@ -86,7 +91,7 @@ def parse_safe(text: str, uniform: bool = False, force: bool = False) -> dict[st
 
 
 # kevesbe biztonsagos de szebb a kod (tokeletesen mukodik sima ipconfiggal)
-def parse_short(text: str, uniform: bool = False, force: bool = False) -> dict[str, Any]:
+def parse_short(text: str, uniform: bool = False, force: bool = False, clean: bool = False) -> dict[str, Any]:
     result = []
     
     for line in text.split('\n'):
@@ -96,7 +101,7 @@ def parse_short(text: str, uniform: bool = False, force: bool = False) -> dict[s
         
         # blokk kozben
         elif (line.startswith(" ")):
-            key, val = parse_line(line)
+            key, val = parse_line(line, clean)
             if (key != None):
                 result[-1][key] = val
     if uniform:
@@ -108,7 +113,7 @@ def main():
     for path in Path(".").glob("*.log"):
         parsed_data.append({
             "file_name": path.name,
-            "adapters": parse_safe(path.read_text(encoding='utf-8'), ARG_UNIFORM, ARG_FORCE)
+            "adapters": parse_safe(path.read_text(encoding='utf-8'), ARG_UNIFORM, ARG_FORCE, ARG_CLEAN)
         })
     
     print(dumps(parsed_data, indent=2))
