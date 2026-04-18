@@ -116,7 +116,9 @@ def main():
             "adapters": parse(text.strip(), ARG_UNIFORM, ARG_FORCE, ARG_CLEAN)
         })
     
-    print(dumps(parsed_data, indent=2))
+    json_data = dumps(parsed_data, indent=2)
+    print(json_data)
+    Path("out.json").write_text(json_data, encoding="utf-8")
 
 
 if __name__ == "__main__":
