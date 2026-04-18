@@ -70,11 +70,13 @@ def parse(text: str, uniform: bool = False, force: bool = False, clean: bool = F
     parsing = False
     prev_key = ""
     
-    for line in text.splitlines():
+    it = iter(text.splitlines())
+    for line in it:
         # adapter nev = blokk kezdete
         if is_adapter_name(line):
             parsing = True
             result.append({"adapter_name": line.strip()[:-1]})
+            next(it)
         
         # blokk kozben
         elif (parsing and line.startswith((" ", "\t"))):
@@ -90,7 +92,7 @@ def parse(text: str, uniform: bool = False, force: bool = False, clean: bool = F
                 prev_key = None
         
         # blokk vege
-        elif not parsing and is_end_of_block(line):
+        elif parsing and is_end_of_block(line):
             parsing = False
     
     if uniform:
