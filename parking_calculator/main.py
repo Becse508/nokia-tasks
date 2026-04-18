@@ -8,9 +8,6 @@ MINUTES = 60
 
 def parse(text: str) -> tuple[str, datetime, datetime] | None:
     parts = text.split('		', 2)
-    if (len(parts) < 3):
-        return None
-    
     return parts[0], datetime.fromisoformat(parts[1]), datetime.fromisoformat(parts[2])
 
 
@@ -18,7 +15,8 @@ def calc_time(start: datetime, end: datetime) -> timedelta:
     if (start > end):
         return timedelta(0)
     return end - start
-    
+
+
 def calc_fine(time: timedelta) -> float | int:
     minutes = 0
     if (time.seconds != 0):
@@ -46,14 +44,22 @@ def calc_fine(time: timedelta) -> float | int:
 def main():
     data = Path("input.txt").read_text(encoding="utf-8")
     
-    print("RENDSZAM      IDO                 AR\n"
-          "================================================")
+    output = ("RENDSZAM      IDO                 AR\n"
+             "================================================\n")
+    
     for line in data.splitlines()[2:]:
-        plate, start, end = parse(line)
-        time = calc_time(start, end)
-        fine = calc_fine(time)
+        try:
+            plate, start, end = parse(line)
+            time = calc_time(start, end)
+            fine = calc_fine(time)
+        except:
+            output += "Hibas adatok\n"
+            continue
         
-        print(f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}")
+        output += f"{str(plate):<14}{str(time):<20}{str(int(fine)) + ' Ft':<10}\n"
+    
+    print(output)
+    Path("out.txt").write_text(output)
     
 
 
