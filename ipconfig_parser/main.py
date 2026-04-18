@@ -68,13 +68,12 @@ def parse(text: str, uniform: bool = False, force: bool = False, clean: bool = F
     result = []
     
     parsing = False
-    just_started = False
     prev_key = ""
+    
     for line in text.splitlines():
         # adapter nev = blokk kezdete
         if is_adapter_name(line):
             parsing = True
-            just_started = True
             result.append({"adapter_name": line.strip()[:-1]})
         
         # blokk kozben
@@ -92,10 +91,7 @@ def parse(text: str, uniform: bool = False, force: bool = False, clean: bool = F
         
         # blokk vege
         elif not parsing and is_end_of_block(line):
-            if just_started:
-                just_started = False
-            elif parsing:
-                parsing = False
+            parsing = False
     
     if uniform:
         make_uniform(result, force)
